@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/*
+!data/.gitkeep
+catboost_info/
+.env
+
+.venv311/
+
+dashboard*-preview.jpg
+
+.DS_Store

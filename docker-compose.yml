@@ -1,0 +1,95 @@
+name: fraud-lab
+x-app: &app
+  build: .
+  image: fraud-lab-app:local
+  restart: unless-stopped
+  environment: &env
+    KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    DATABASE_URL: postgresql://fraud:fraud@postgres:5432/fraud
+services:
+  kafka:
+    image: apache/kafka:3.9.1
+    restart: unless-stopped
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:29092,EXTERNAL://:9092,CONTROLLER://:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes: ["kafka-data:/var/lib/kafka/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+  kafka-init:
+    image: apache/kafka:3.9.1
+    depends_on:
+      kafka: {condition: service_healthy}
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        for topic in transactions scores dead-letter; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic "$$topic" --partitions 1 --replication-factor 1
+        done
+  postgres:
+    image: postgres:16.8-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraud
+      POSTGRES_PASSWORD: fraud
+      POSTGRES_DB: fraud
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud -d fraud"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  scoring:
+    <<: *app
+    command: ["python", "-m", "app.scoring_worker"]
+    depends_on:
+      kafka-init: {condition: service_completed_successfully}
+  storage:
+    <<: *app
+    command: ["python", "-m", "app.storage_worker"]
+    depends_on:
+      kafka-init: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+  dashboard:
+    <<: *app
+    command: ["streamlit", "run", "app/dashboard.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports: ["8501:8501"]
+    depends_on:
+      kafka-init: {condition: service_completed_successfully}
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: Fraud Lab
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka-init: {condition: service_completed_successfully}
+volumes:
+  kafka-data:
+  postgres-data:

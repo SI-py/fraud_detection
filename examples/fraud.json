@@ -1,0 +1,20 @@
+{
+  "transaction_time": "2019-12-24 23:24",
+  "merch": "fraud_Herman, Treutel and Dickens",
+  "cat_id": "misc_net",
+  "amount": 829.32,
+  "name_1": "Jeremy",
+  "name_2": "Nunez",
+  "gender": "M",
+  "street": "787 Allen Mount",
+  "one_city": "Roland",
+  "us_state": "AR",
+  "post_code": 72135,
+  "lat": 34.8829,
+  "lon": -92.5192,
+  "population_city": 2623,
+  "jobs": "Homeopath",
+  "merchant_lat": 35.359582,
+  "merchant_lon": -92.991261,
+  "transaction_id": "demo-fraud-001"
+}

@@ -1,0 +1,20 @@
+{
+  "transaction_time": "2020-03-10 13:23",
+  "merch": "fraud_Reichel, Bradtke and Blanda",
+  "cat_id": "travel",
+  "amount": 262.39,
+  "name_1": "Joshua",
+  "name_2": "Carpenter",
+  "gender": "M",
+  "street": "04975 Allison Shoal",
+  "one_city": "Bronx",
+  "us_state": "NY",
+  "post_code": 10463,
+  "lat": 40.8798,
+  "lon": -73.9067,
+  "population_city": 1382480,
+  "jobs": "Therapist, drama",
+  "merchant_lat": 41.181696,
+  "merchant_lon": -72.965067,
+  "transaction_id": "demo-legitimate-001"
+}
