@@ -18,3 +18,9 @@ docker compose up -d --build
 ```bash
 docker compose down
 ```
+
+Для остановки с удалением всех данных PostgreSQL и сообщений Kafka:
+
+```bash
+docker compose down -v
+```
